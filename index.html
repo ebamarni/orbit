@@ -7,7 +7,7 @@
     <style>
         @font-face {
             font-family: 'Styrene';
-            src: url('Styrene-B-Bold-Regular.ttf') format('truetype');
+            src: url('https://raw.githubusercontent.com/ebamarni/orbit/main/Styrene-B-Bold-Regular.ttf') format('truetype');
             font-weight: 400;
             font-display: swap;
         }
@@ -448,7 +448,6 @@
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
         }
 
-        /* TYPING BAR NOW FIRST */
         .input-box {
             display: flex;
             gap: 10px;
@@ -459,7 +458,7 @@
             border: 2px solid var(--border);
             min-height: 56px;
             transition: border-color 0.2s, box-shadow 0.2s;
-            margin-bottom: 10px; /* Space between typing bar and chips button */
+            margin-bottom: 10px;
         }
 
         .input-box:focus-within {
@@ -532,13 +531,11 @@
             margin-left: 2px;
         }
 
-        /* CHIPS BUTTON NOW BELOW TYPING BAR */
         .input-header {
             display: flex;
             gap: 8px;
             overflow-x: auto;
             scrollbar-width: none;
-            margin-bottom: 0; /* Removed margin since it's now below input */
         }
 
         .input-header::-webkit-scrollbar {
@@ -569,7 +566,7 @@
         .chips-dropdown {
             display: none;
             gap: 8px;
-            margin-top: 10px; /* Space between button and dropdown */
+            margin-top: 10px;
             overflow-x: auto;
             padding-bottom: 4px;
             -webkit-overflow-scrolling: touch;
@@ -735,7 +732,6 @@
 
     <div class="input-container" id="inputContainer">
         <div class="input-wrapper">
-            <!-- TYPING BAR FIRST -->
             <div class="input-box">
                 <textarea id="input" placeholder="Ask physics..." rows="1" inputmode="text" enterkeyhint="send" autocomplete="off" autocorrect="off" autocapitalize="sentences"></textarea>
                 <button class="send-btn" onclick="ask()" id="btn" aria-label="Send">
@@ -746,14 +742,12 @@
                 </button>
             </div>
 
-            <!-- CHIPS BUTTON SECOND -->
             <div class="input-header">
                 <button class="chips-toggle" onclick="toggleChips()" id="chipsToggle">
                     1 çirké ▼
                 </button>
             </div>
             
-            <!-- CHIPS DROPDOWN (appears below button) -->
             <div class="chips-dropdown" id="chipsDropdown">
                 <button class="chip" onclick="quickAsk('spring motion')">spring</button>
                 <button class="chip" onclick="quickAsk('potential energy')">PE</button>
