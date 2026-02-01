@@ -66,7 +66,6 @@
             bottom: 0;
         }
 
-        /* Header */
         header {
             padding: 14px 18px;
             background: var(--card);
@@ -173,7 +172,6 @@
             font-weight: 300;
         }
 
-        /* Developer modal */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -328,7 +326,6 @@
             font-family: 'Times New Roman', serif;
         }
 
-        /* Chat area */
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -400,7 +397,6 @@
             color: var(--error);
         }
 
-        /* Empty state */
         .empty {
             text-align: center;
             padding: 40px 20px;
@@ -421,7 +417,6 @@
             color: var(--accent);
         }
 
-        /* Input area */
         .input-area {
             background: var(--card);
             border-top: 1px solid var(--border);
@@ -529,7 +524,6 @@
             opacity: 0.4;
         }
 
-        /* Cursor for typing effect */
         .typing-cursor {
             display: inline-block;
             width: 2px;
@@ -545,7 +539,6 @@
             51%, 100% { opacity: 0; }
         }
 
-        /* Thinking indicator */
         .thinking {
             display: flex;
             gap: 4px;
@@ -568,7 +561,6 @@
             40% { transform: scale(1); }
         }
 
-        /* Retry button */
         .retry-btn {
             background: var(--accent);
             color: white;
@@ -581,7 +573,6 @@
             font-family: inherit;
         }
 
-        /* Physics symbols */
         .symbol {
             position: fixed;
             font-size: 14px;
@@ -597,7 +588,6 @@
         .symbol:nth-child(3) { bottom: 30%; left: 3%; }
         .symbol:nth-child(4) { bottom: 20%; right: 5%; }
 
-        /* Scrollbar */
         .chat-container::-webkit-scrollbar {
             width: 3px;
         }
@@ -675,7 +665,6 @@
         </div>
     </div>
 
-    <!-- Developer Modal -->
     <div class="modal-overlay" id="modal" onclick="closeModal(event)">
         <div class="modal" onclick="event.stopPropagation()">
             <button class="modal-close" onclick="closeModal()">×</button>
@@ -727,15 +716,6 @@
         let currentLang = 'ku';
         let isTyping = false;
 
-        // CORS proxies to try
-        const proxies = [
-            'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://api.codetabs.com/v1/proxy?quest='
-        ];
-        let currentProxy = 0;
-
-        // Load saved theme
         if (localStorage.getItem('theme') === 'dark') {
             document.body.setAttribute('data-theme', 'dark');
         }
@@ -769,9 +749,7 @@
             document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
         }
 
-        // Mobile keyboard handling
         function handleResize() {
-            // Scroll to bottom when keyboard opens/closes
             setTimeout(() => {
                 chat.scrollTop = chat.scrollHeight;
                 if (document.activeElement === input) {
@@ -788,7 +766,6 @@
             }, 300);
         });
 
-        // Prevent zoom on focus (iOS)
         input.addEventListener('touchstart', () => {
             input.style.fontSize = '16px';
         });
@@ -840,6 +817,11 @@
         function cleanText(text) {
             if (!text) return '';
             
+            // Remove the deprecation warning
+            text = text.replace(/⚠️? IMPORTANT NOTICE ⚠️?[\s\S]*?text\.pollinations\.ai are NOT affected and will continue to work normally\./gi, '');
+            text = text.replace(/The Pollinations legacy text Aπ? is being deprecated[\s\S]*?latest models\./gi, '');
+            text = text.replace(/Please migrate to our new service at https:\/\/enter\.pollinations\.ai[\s\S]*?models\./gi, '');
+            
             // Remove markdown
             text = text.replace(/[#*_~`]/g, '');
             text = text.replace(/\*\*/g, '');
@@ -859,6 +841,9 @@
             text = text.replace(/([A-Z]{1,2})\s*=\s*([^,\n]+)/g, '<div class="formula"><span class="variable">$1</span> = $2</div>');
             text = text.replace(/\b([a-zA-Z])\s*=\s*/g, '<span class="variable">$1</span> = ');
             
+            // Clean up extra whitespace
+            text = text.replace(/\n\s*\n/g, '\n').trim();
+            
             return text;
         }
 
@@ -877,43 +862,6 @@
             
             messageDiv.innerHTML = cleanText(currentText);
             isTyping = false;
-        }
-
-        async function fetchWithProxy(url, retries = 2) {
-            for (let i = 0; i <= retries; i++) {
-                try {
-                    const proxy = proxies[currentProxy];
-                    const fullUrl = proxy + encodeURIComponent(url);
-                    
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 15000);
-                    
-                    const res = await fetch(fullUrl, { 
-                        signal: controller.signal,
-                        headers: { 'Accept': 'text/plain' }
-                    });
-                    clearTimeout(timeout);
-                    
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    
-                    const text = await res.text();
-                    
-                    // Check if we got an error page instead of AI response
-                    if (text.includes('<!DOCTYPE') || text.includes('<html') || text.length < 5) {
-                        throw new Error('proxy error');
-                    }
-                    
-                    return text;
-                    
-                } catch (e) {
-                    if (i === retries) {
-                        // Try next proxy
-                        currentProxy = (currentProxy + 1) % proxies.length;
-                        throw e;
-                    }
-                    await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-                }
-            }
         }
 
         async function ask() {
@@ -943,14 +891,33 @@
 
             try {
                 const prompt = `You are a physics professor. Answer very concisely (2-3 sentences). Use simple analogies. No markdown. Plain text only. Question: ${text}`;
-                const apiUrl = 'https://text.pollinations.ai/' + encodeURIComponent(prompt);
+                const apiUrl = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
                 
-                const result = await fetchWithProxy(apiUrl);
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 15000);
+                
+                const res = await fetch(apiUrl, { 
+                    signal: controller.signal,
+                    headers: { 
+                        'Accept': 'text/plain',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                });
+                clearTimeout(timeout);
+                
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                let result = await res.text();
+                
+                // Check if we got an error page
+                if (result.includes('<!DOCTYPE') || result.includes('<html') || result.length < 3) {
+                    throw new Error('Invalid response');
+                }
                 
                 // Clean up result
                 let cleanResult = result.replace(/["']/g, '').trim();
-                if (cleanResult.length > 500) {
-                    cleanResult = cleanResult.substring(0, 500) + '...';
+                if (cleanResult.length > 800) {
+                    cleanResult = cleanResult.substring(0, 800) + '...';
                 }
                 
                 thinking.remove();
@@ -990,3 +957,4 @@
     </script>
 </body>
 </html>
+
