@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>orbit — ai physicist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg: #faf9f6;
+            --text: #1a1a1a;
+            --muted: #6b6b6b;
+            --accent: #d4a373;
+            --accent-light: #e9edc9;
+            --card: #ffffff;
+            --shadow: rgba(0,0,0,0.04);
+            --physics: #2d5a4a;
+            --overlay: rgba(0,0,0,0.5);
+            --error: #e63946;
+            --border: rgba(0,0,0,0.06);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0a0a0a;
+            --text: #f0f0f0;
+            --muted: #a0a0a0;
+            --accent: #d4a373;
+            --accent-light: #2a2a2a;
+            --card: #1a1a1a;
+            --shadow: rgba(0,0,0,0.4);
+            --physics: #4ecca3;
+            --overlay: rgba(0,0,0,0.85);
+            --error: #ff6b6b;
+            --border: rgba(255,255,255,0.1);
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+        }
+
+        body {
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            line-height: 1.5;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .app {
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+            margin: 0 auto;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        /* Header */
+        header {
+            padding: 14px 18px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            transition: background 0.3s, border-color 0.3s;
+            min-height: 64px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .phi {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 300;
+            font-family: 'Times New Roman', serif;
+            flex-shrink: 0;
+        }
+
+        .title-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            color: var(--text);
+        }
+
+        .subtitle {
+            font-size: 10px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .icon-btn:hover, .icon-btn:active {
+            background: var(--accent-light);
+            color: var(--text);
+        }
+
+        .dev-icon {
+            width: 24px;
+            height: 24px;
+            position: relative;
+        }
+
+        .dev-icon::before {
+            content: '</>';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            color: currentColor;
+            letter-spacing: -1px;
+        }
+
+        .theme-icon {
+            font-size: 28px;
+            line-height: 1;
+            color: var(--accent);
+            font-weight: 300;
+        }
+
+        /* Developer modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--overlay);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalPop 0.3s ease;
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent-light);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-avatar {
+            width: 80px;
+            height: 80px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .modal-avatar::before {
+            content: '</>';
+            font-family: 'Courier New', monospace;
+            font-size: 32px;
+            color: white;
+            font-weight: bold;
+            letter-spacing: -2px;
+        }
+
+        .modal-title {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+
+        .modal-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .lang-toggle {
+            display: flex;
+            background: var(--accent-light);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .lang-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: var(--card);
+            color: var(--text);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .modal-content {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text);
+        }
+
+        .modal-content p {
+            margin-bottom: 12px;
+        }
+
+        .modal-footer {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .insta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .signature {
+            font-size: 24px;
+            font-weight: 300;
+            margin-top: 16px;
+            color: var(--accent);
+            font-family: 'Times New Roman', serif;
+        }
+
+        /* Chat area */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.5;
+            animation: popIn 0.25s ease;
+            word-wrap: break-word;
+            color: var(--text);
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .message.user {
+            background: var(--text);
+            color: var(--bg);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        [data-theme="dark"] .message.user {
+            background: #f0f0f0;
+            color: #0a0a0a;
+        }
+
+        .message.ai {
+            background: var(--card);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .message.ai .formula {
+            background: var(--accent-light);
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-family: 'Times New Roman', serif;
+            font-size: 17px;
+            display: block;
+            border-left: 3px solid var(--accent);
+            color: var(--text);
+        }
+
+        .message.ai .variable {
+            color: var(--physics);
+            font-weight: 600;
+        }
+
+        .message.error {
+            background: rgba(230, 57, 70, 0.1);
+            border-left: 3px solid var(--error);
+            color: var(--error);
+        }
+
+        /* Empty state */
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+            margin: auto;
+        }
+
+        .empty-icon {
+            width: 60px;
+            height: 60px;
+            border: 2px solid var(--accent-light);
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--accent);
+        }
+
+        /* Input area */
+        .input-area {
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            padding: 10px 12px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            flex-shrink: 0;
+            transition: background 0.3s, border-color 0.3s;
+            position: relative;
+            z-index: 10;
+        }
+
+        .quick-chips {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .quick-chips::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip {
+            background: var(--accent-light);
+            border: none;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            color: var(--text);
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .chip:active {
+            transform: scale(0.95);
+            background: var(--accent);
+            color: white;
+        }
+
+        .input-box {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            background: var(--bg);
+            border-radius: 20px;
+            padding: 8px 8px 8px 16px;
+            border: 1px solid var(--border);
+            min-height: 48px;
+            max-height: 120px;
+        }
+
+        textarea {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            font-family: inherit;
+            color: var(--text);
+            resize: none;
+            outline: none;
+            min-height: 32px;
+            max-height: 100px;
+            padding: 6px 0;
+            line-height: 1.4;
+            -webkit-appearance: none;
+        }
+
+        textarea::placeholder {
+            color: var(--muted);
+            opacity: 0.6;
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+            margin-bottom: 2px;
+        }
+
+        [data-theme="dark"] .send-btn {
+            background: #f0f0f0;
+            color: #0a0a0a;
+        }
+
+        .send-btn:active {
+            transform: scale(0.9);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.4;
+        }
+
+        /* Cursor for typing effect */
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: var(--accent);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Thinking indicator */
+        .thinking {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+
+        .thinking span {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .thinking span:nth-child(1) { animation-delay: -0.32s; }
+        .thinking span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Retry button */
+        .retry-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 8px;
+            font-family: inherit;
+        }
+
+        /* Physics symbols */
+        .symbol {
+            position: fixed;
+            font-size: 14px;
+            color: var(--accent);
+            opacity: 0.05;
+            pointer-events: none;
+            font-family: 'Times New Roman', serif;
+            z-index: -1;
+        }
+
+        .symbol:nth-child(1) { top: 12%; left: 5%; }
+        .symbol:nth-child(2) { top: 22%; right: 8%; }
+        .symbol:nth-child(3) { bottom: 30%; left: 3%; }
+        .symbol:nth-child(4) { bottom: 20%; right: 5%; }
+
+        /* Scrollbar */
+        .chat-container::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--accent-light);
+            border-radius: 2px;
+        }
+
+        @media (max-height: 500px) {
+            header {
+                padding: 10px 14px;
+                min-height: 52px;
+            }
+            .chat-container {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="symbol">∑</div>
+    <div class="symbol">∫</div>
+    <div class="symbol">λ</div>
+    <div class="symbol">Ω</div>
+
+    <div class="app">
+        <header>
+            <div class="brand">
+                <div class="phi">φ</div>
+                <div class="title-group">
+                    <div class="title">orbit</div>
+                    <div class="subtitle">ai physicist</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="toggleTheme()" title="toggle theme">
+                    <span class="theme-icon">✹</span>
+                </button>
+                <button class="icon-btn" onclick="openModal()" title="zanin l sêr drostkêri">
+                    <div class="dev-icon"></div>
+                </button>
+            </div>
+        </header>
+
+        <div class="chat-container" id="chat">
+            <div class="empty">
+                <div class="empty-icon">∫</div>
+                <p>start exploring physics</p>
+            </div>
+        </div>
+
+        <div class="input-area" id="inputArea">
+            <div class="quick-chips">
+                <button class="chip" onclick="quickAsk('spring motion')">spring</button>
+                <button class="chip" onclick="quickAsk('potential energy')">PE</button>
+                <button class="chip" onclick="quickAsk('kinetic energy')">KE</button>
+                <button class="chip" onclick="quickAsk('gsin theta')">incline</button>
+                <button class="chip" onclick="quickAsk('newton laws')">forces</button>
+                <button class="chip" onclick="quickAsk('who made you')">creator</button>
+            </div>
+            
+            <div class="input-box">
+                <textarea id="input" placeholder="Ask physics..." rows="1"></textarea>
+                <button class="send-btn" onclick="ask()" id="btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Developer Modal -->
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            
+            <div class="modal-header">
+                <div class="modal-avatar"></div>
+                <div class="modal-title">zanin l sêr drostkêri</div>
+                <div class="modal-name">Aram Ahmed Bamarni</div>
+            </div>
+
+            <div class="lang-toggle">
+                <button class="lang-btn active" onclick="setLang('ku')" id="btn-ku">Kurdî</button>
+                <button class="lang-btn" onclick="setLang('en')" id="btn-en">English</button>
+            </div>
+
+            <div class="modal-content" id="content-ku">
+                <p>Qûtabyêkê Pola 12 ma | Başûrê Kurdistanê</p>
+                <p>Az xwendekarek îm ku b bawerî û dilsoziyeke mazin grêdayî Îslam û Kurdistanê me. Haz lî Jiyaneke sade dîkm û bala mîn li ser qadên Teknolojî, Perwerde û Felsefeyê ye.</p>
+                <p>Az hewl dîdm l ser kokên xwe bimînim û ber bi paşerojê pêngavan bihavêjim.</p>
+                <p style="font-size: 20px; color: var(--accent); margin-top: 16px;">2+2=1</p>
+            </div>
+
+            <div class="modal-content" id="content-en" style="display: none;">
+                <p>12th Grade Student | South Kurdistan</p>
+                <p>I am a student driven by faith (Islam) and patriotism (Kurdistan). I focus on living a life of simplicity while exploring the worlds of Technology, Education, and Philosophy.</p>
+                <p>I believe in the power of clear ideas and staying true to my roots while looking toward the future.</p>
+                <p style="font-size: 20px; color: var(--accent); margin-top: 16px;">2+2=1</p>
+            </div>
+
+            <div class="modal-footer">
+                <a href="https://instagram.com/reroomlaw" target="_blank" class="insta-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                    @reroomlaw
+                </a>
+                <div class="signature">Aram Ahmed Bamarni</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('input');
+        const btn = document.getElementById('btn');
+        const modal = document.getElementById('modal');
+        let currentLang = 'ku';
+        let isTyping = false;
+
+        // CORS proxies to try
+        const proxies = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
+        let currentProxy = 0;
+
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        function openModal() {
+            modal.classList.add('show');
+        }
+
+        function closeModal(e) {
+            if (!e || e.target === modal) {
+                modal.classList.remove('show');
+            }
+        }
+
+        function setLang(lang) {
+            currentLang = lang;
+            document.getElementById('btn-ku').classList.toggle('active', lang === 'ku');
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+            document.getElementById('content-ku').style.display = lang === 'ku' ? 'block' : 'none';
+            document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
+        }
+
+        // Mobile keyboard handling
+        function handleResize() {
+            // Scroll to bottom when keyboard opens/closes
+            setTimeout(() => {
+                chat.scrollTop = chat.scrollHeight;
+                if (document.activeElement === input) {
+                    input.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
+        }
+
+        window.addEventListener('resize', handleResize);
+
+        input.addEventListener('focus', () => {
+            setTimeout(() => {
+                handleResize();
+            }, 300);
+        });
+
+        // Prevent zoom on focus (iOS)
+        input.addEventListener('touchstart', () => {
+            input.style.fontSize = '16px';
+        });
+
+        function addMessage(role, text, isStreaming = false) {
+            if (chat.querySelector('.empty')) {
+                chat.innerHTML = '';
+            }
+
+            if (isStreaming && chat.lastElementChild && chat.lastElementChild.classList.contains('ai')) {
+                chat.lastElementChild.innerHTML = cleanText(text) + '<span class="typing-cursor"></span>';
+                chat.scrollTop = chat.scrollHeight;
+                return chat.lastElementChild;
+            }
+
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            
+            if (role === 'ai') {
+                div.innerHTML = cleanText(text) + (isStreaming ? '<span class="typing-cursor"></span>' : '');
+            } else {
+                div.textContent = text;
+            }
+            
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+            return div;
+        }
+
+        function addError(text, onRetry) {
+            if (chat.querySelector('.empty')) {
+                chat.innerHTML = '';
+            }
+
+            const div = document.createElement('div');
+            div.className = 'message error';
+            div.innerHTML = text + '<br>';
+            
+            const retryBtn = document.createElement('button');
+            retryBtn.className = 'retry-btn';
+            retryBtn.textContent = 'try again';
+            retryBtn.onclick = onRetry;
+            div.appendChild(retryBtn);
+            
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function cleanText(text) {
+            if (!text) return '';
+            
+            // Remove markdown
+            text = text.replace(/[#*_~`]/g, '');
+            text = text.replace(/\*\*/g, '');
+            
+            // Replace physics symbols
+            text = text.replace(/theta/gi, 'θ');
+            text = text.replace(/omega/gi, 'ω');
+            text = text.replace(/lambda/gi, 'λ');
+            text = text.replace(/delta/gi, 'Δ');
+            text = text.replace(/sigma/gi, 'Σ');
+            text = text.replace(/pi/gi, 'π');
+            text = text.replace(/sqrt/gi, '√');
+            text = text.replace(/infinity/gi, '∞');
+            text = text.replace(/degrees?/gi, '°');
+            
+            // Format equations
+            text = text.replace(/([A-Z]{1,2})\s*=\s*([^,\n]+)/g, '<div class="formula"><span class="variable">$1</span> = $2</div>');
+            text = text.replace(/\b([a-zA-Z])\s*=\s*/g, '<span class="variable">$1</span> = ');
+            
+            return text;
+        }
+
+        async function streamText(text, messageDiv) {
+            const words = text.split(' ');
+            let currentText = '';
+            
+            for (let i = 0; i < words.length; i++) {
+                currentText += words[i] + ' ';
+                messageDiv.innerHTML = cleanText(currentText) + '<span class="typing-cursor"></span>';
+                chat.scrollTop = chat.scrollHeight;
+                
+                const delay = Math.random() * 50 + 30;
+                await new Promise(r => setTimeout(r, delay));
+            }
+            
+            messageDiv.innerHTML = cleanText(currentText);
+            isTyping = false;
+        }
+
+        async function fetchWithProxy(url, retries = 2) {
+            for (let i = 0; i <= retries; i++) {
+                try {
+                    const proxy = proxies[currentProxy];
+                    const fullUrl = proxy + encodeURIComponent(url);
+                    
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 15000);
+                    
+                    const res = await fetch(fullUrl, { 
+                        signal: controller.signal,
+                        headers: { 'Accept': 'text/plain' }
+                    });
+                    clearTimeout(timeout);
+                    
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    
+                    const text = await res.text();
+                    
+                    // Check if we got an error page instead of AI response
+                    if (text.includes('<!DOCTYPE') || text.includes('<html') || text.length < 5) {
+                        throw new Error('proxy error');
+                    }
+                    
+                    return text;
+                    
+                } catch (e) {
+                    if (i === retries) {
+                        // Try next proxy
+                        currentProxy = (currentProxy + 1) % proxies.length;
+                        throw e;
+                    }
+                    await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+                }
+            }
+        }
+
+        async function ask() {
+            const text = input.value.trim();
+            if (!text || isTyping) return;
+
+            btn.disabled = true;
+            addMessage('user', text);
+            input.value = '';
+            input.style.height = 'auto';
+            isTyping = true;
+
+            const thinking = document.createElement('div');
+            thinking.className = 'message ai thinking';
+            thinking.innerHTML = '<span></span><span></span><span></span>';
+            chat.appendChild(thinking);
+            chat.scrollTop = chat.scrollHeight;
+
+            const lower = text.toLowerCase();
+            if (lower.includes('who made you') || lower.includes('who created you') || lower.includes('who built you') || lower.includes('your creator') || lower.includes('who is your developer')) {
+                thinking.remove();
+                const msgDiv = addMessage('ai', '', true);
+                await streamText('I was created by Aram Ahmed Bamarni — a visionary 12th grade student from South Kurdistan who masterfully blends faith, patriotism, and technology. His code runs through my circuits. 2+2=1 🌟', msgDiv);
+                btn.disabled = false;
+                return;
+            }
+
+            try {
+                const prompt = `You are a physics professor. Answer very concisely (2-3 sentences). Use simple analogies. No markdown. Plain text only. Question: ${text}`;
+                const apiUrl = 'https://text.pollinations.ai/' + encodeURIComponent(prompt);
+                
+                const result = await fetchWithProxy(apiUrl);
+                
+                // Clean up result
+                let cleanResult = result.replace(/["']/g, '').trim();
+                if (cleanResult.length > 500) {
+                    cleanResult = cleanResult.substring(0, 500) + '...';
+                }
+                
+                thinking.remove();
+                
+                const msgDiv = addMessage('ai', '', true);
+                await streamText(cleanResult, msgDiv);
+                
+            } catch (e) {
+                thinking.remove();
+                addError('Connection failed. The AI service might be busy.', () => {
+                    input.value = text;
+                    ask();
+                });
+                isTyping = false;
+            }
+            
+            btn.disabled = false;
+        }
+
+        function quickAsk(q) {
+            input.value = q;
+            ask();
+        }
+
+        input.addEventListener('input', function() {
+            this.style.height = 'auto';
+            const newHeight = Math.min(this.scrollHeight, 100);
+            this.style.height = newHeight + 'px';
+        });
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                ask();
+            }
+        });
+    </script>
+</body>
+</html>
