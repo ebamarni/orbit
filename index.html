@@ -1,1100 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>orbit — ai physicist</title>
-    <style>
-        @font-face {
-            font-family: 'Styrene';
-            src: url('https://raw.githubusercontent.com/ebamarni/orbit/main/Styrene-B-Bold-Regular.ttf') format('truetype');
-            font-weight: 400;
-            font-display: swap;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        :root {
-            --bg: #faf9f6;
-            --text: #1a1a1a;
-            --muted: #6b6b6b;
-            --accent: #d4a373;
-            --accent-light: #e9edc9;
-            --card: #ffffff;
-            --shadow: rgba(0,0,0,0.04);
-            --physics: #2d5a4a;
-            --overlay: rgba(0,0,0,0.5);
-            --error: #e63946;
-            --border: rgba(0,0,0,0.06);
-        }
-
-        [data-theme="dark"] {
-            --bg: #0a0a0a;
-            --text: #f0f0f0;
-            --muted: #a0a0a0;
-            --accent: #d4a373;
-            --accent-light: #2a2a2a;
-            --card: #1a1a1a;
-            --shadow: rgba(0,0,0,0.4);
-            --physics: #4ecca3;
-            --overlay: rgba(0,0,0,0.85);
-            --error: #ff6b6b;
-            --border: rgba(255,255,255,0.1);
-        }
-
-        html, body {
-            height: 100%;
-            background: var(--bg);
-            font-family: 'Styrene', -apple-system, BlinkMacSystemFont, sans-serif;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        body {
-            color: var(--text);
-            line-height: 1.6;
-            font-weight: 400;
-            letter-spacing: -0.01em;
-            transition: background 0.3s, color 0.3s;
-        }
-
-        .app {
-            min-height: 100vh;
-            min-height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            max-width: 100%;
-            margin: 0 auto;
-            padding-bottom: 180px;
-        }
-
-        header {
-            padding: 14px 18px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            transition: background 0.3s, border-color 0.3s;
-            min-height: 64px;
-            backdrop-filter: blur(10px);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .phi {
-            width: 36px;
-            height: 36px;
-            background: var(--accent);
-            color: white;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 300;
-            font-family: 'Times New Roman', serif;
-            flex-shrink: 0;
-        }
-
-        .title-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .title {
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: -0.03em;
-            line-height: 1.2;
-        }
-
-        .subtitle {
-            font-size: 10px;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 500;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .icon-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            border: none;
-            background: transparent;
-            color: var(--muted);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex-shrink: 0;
-            font-family: inherit;
-        }
-
-        .icon-btn:hover, .icon-btn:active {
-            background: var(--accent-light);
-            color: var(--text);
-        }
-
-        .fullscreen-btn {
-            font-size: 20px;
-            font-weight: 300;
-            letter-spacing: -1px;
-        }
-
-        .dev-icon {
-            width: 24px;
-            height: 24px;
-            position: relative;
-        }
-
-        .dev-icon::before {
-            content: '</>';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: bold;
-            color: currentColor;
-        }
-
-        .theme-icon {
-            font-size: 28px;
-            line-height: 1;
-            color: var(--accent);
-            font-weight: 300;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--overlay);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-            backdrop-filter: blur(8px);
-        }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-        .modal {
-            background: var(--card);
-            border-radius: 24px;
-            padding: 28px;
-            max-width: 400px;
-            width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
-            animation: modalPop 0.3s ease;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        @keyframes modalPop {
-            from { opacity: 0; transform: scale(0.9) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: none;
-            background: var(--accent-light);
-            color: var(--text);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .modal-header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .modal-avatar {
-            width: 80px;
-            height: 80px;
-            background: var(--accent);
-            border-radius: 50%;
-            margin: 0 auto 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-avatar::before {
-            content: '</>';
-            font-family: 'Courier New', monospace;
-            font-size: 32px;
-            color: white;
-            font-weight: bold;
-        }
-
-        .modal-title {
-            font-size: 12px;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 4px;
-            font-weight: 500;
-        }
-
-        .modal-name {
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-        }
-
-        .lang-toggle {
-            display: flex;
-            background: var(--accent-light);
-            border-radius: 10px;
-            padding: 4px;
-            margin-bottom: 20px;
-        }
-
-        .lang-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: transparent;
-            color: var(--muted);
-            font-size: 13px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
-            font-weight: 500;
-            font-family: inherit;
-        }
-
-        .lang-btn.active {
-            background: var(--card);
-            color: var(--text);
-            box-shadow: 0 2px 8px var(--shadow);
-        }
-
-        .modal-content {
-            font-size: 15px;
-            line-height: 1.7;
-            color: var(--text);
-        }
-
-        .modal-content p {
-            margin-bottom: 14px;
-            text-align: center;
-        }
-
-        .modal-footer {
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .insta-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--accent);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .signature {
-            font-size: 26px;
-            font-weight: 300;
-            margin-top: 16px;
-            color: var(--accent);
-            letter-spacing: -0.02em;
-        }
-
-        .chat-container {
-            flex: 1;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            overflow-y: auto;
-        }
-
-        .message {
-            max-width: 85%;
-            padding: 14px 18px;
-            border-radius: 20px;
-            font-size: 15px;
-            line-height: 1.5;
-            animation: popIn 0.3s ease;
-            word-wrap: break-word;
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .message.user {
-            background: var(--text);
-            color: var(--bg);
-            align-self: flex-end;
-            border-bottom-right-radius: 6px;
-        }
-
-        [data-theme="dark"] .message.user {
-            background: #f0f0f0;
-            color: #0a0a0a;
-        }
-
-        .message.ai {
-            background: var(--card);
-            align-self: flex-start;
-            border-bottom-left-radius: 6px;
-            box-shadow: 0 2px 12px var(--shadow);
-            border: 1px solid var(--border);
-        }
-
-        .message.ai .formula {
-            background: var(--accent-light);
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin: 10px 0;
-            font-size: 17px;
-            display: block;
-            border-left: 3px solid var(--accent);
-        }
-
-        .message.ai .variable {
-            color: var(--physics);
-            font-weight: 600;
-        }
-
-        .message.error {
-            background: rgba(230, 57, 70, 0.1);
-            border-left: 3px solid var(--error);
-            color: var(--error);
-        }
-
-        .empty {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--muted);
-            margin: auto;
-        }
-
-        .empty-icon {
-            width: 80px;
-            height: 80px;
-            border: 2px solid var(--accent);
-            border-radius: 50%;
-            margin: 0 auto 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            color: var(--accent);
-            opacity: 0.5;
-        }
-
-        .input-container {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: transparent;
-            z-index: 1000;
-            transform: translateY(0);
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .input-wrapper {
-            background: var(--card);
-            border-top: 1px solid var(--border);
-            padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-            pointer-events: auto;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-        }
-
-        .input-box {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            background: var(--bg);
-            border-radius: 28px;
-            padding: 6px 6px 6px 20px;
-            border: 2px solid var(--border);
-            min-height: 56px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            margin-bottom: 10px;
-        }
-
-        .input-box:focus-within {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.2);
-        }
-
-        textarea {
-            flex: 1;
-            border: none;
-            background: transparent;
-            font-size: 16px;
-            font-family: 'Styrene', -apple-system, BlinkMacSystemFont, sans-serif;
-            color: var(--text);
-            resize: none;
-            outline: none;
-            height: 24px;
-            max-height: 100px;
-            padding: 0;
-            line-height: 1.5;
-            -webkit-appearance: none;
-            font-weight: 400;
-            margin-top: 2px;
-        }
-
-        textarea::placeholder {
-            color: var(--muted);
-            opacity: 0.8;
-            font-size: 16px;
-        }
-
-        .send-btn {
-            width: 44px;
-            height: 44px;
-            min-width: 44px;
-            min-height: 44px;
-            border-radius: 50%;
-            background: var(--text);
-            color: var(--bg);
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 0;
-            margin: 0;
-            flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        [data-theme="dark"] .send-btn {
-            background: #f0f0f0;
-            color: #0a0a0a;
-        }
-
-        .send-btn:active {
-            transform: scale(0.9);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.4;
-            transform: none;
-        }
-
-        .send-btn svg {
-            width: 20px;
-            height: 20px;
-            margin-left: 2px;
-        }
-
-        .input-header {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-
-        .input-header::-webkit-scrollbar {
-            display: none;
-        }
-
-        .chips-toggle {
-            background: var(--accent-light);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            color: var(--text);
-            cursor: pointer;
-            font-family: inherit;
-            font-weight: 500;
-            transition: all 0.2s;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .chips-toggle:active {
-            transform: scale(0.95);
-            background: var(--accent);
-            color: white;
-        }
-
-        .chips-dropdown {
-            display: none;
-            gap: 8px;
-            margin-top: 10px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            animation: slideDown 0.2s ease;
-        }
-
-        .chips-dropdown.show {
-            display: flex;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .chips-dropdown::-webkit-scrollbar {
-            display: none;
-        }
-
-        .chip {
-            background: var(--accent-light);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            color: var(--text);
-            cursor: pointer;
-            white-space: nowrap;
-            font-family: inherit;
-            transition: all 0.2s;
-            flex-shrink: 0;
-            font-weight: 500;
-        }
-
-        .chip:active, .chip:hover {
-            background: var(--accent);
-            color: white;
-            transform: scale(0.95);
-        }
-
-        .typing-cursor {
-            display: inline-block;
-            width: 2px;
-            height: 1.2em;
-            background: var(--accent);
-            margin-left: 3px;
-            animation: blink 1s infinite;
-            vertical-align: middle;
-        }
-
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
-
-        .thinking {
-            display: flex;
-            gap: 4px;
-            padding: 14px 18px;
-            align-items: center;
-            height: 46px;
-        }
-
-        .thinking span {
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-
-        .thinking span:nth-child(1) { animation-delay: -0.32s; }
-        .thinking span:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-            40% { transform: scale(1); opacity: 1; }
-        }
-
-        .retry-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-family: inherit;
-            font-weight: 500;
-            transition: transform 0.2s;
-        }
-
-        .retry-btn:active {
-            transform: scale(0.95);
-        }
-
-        .symbol {
-            position: fixed;
-            font-size: 20px;
-            color: var(--accent);
-            opacity: 0.08;
-            pointer-events: none;
-            font-family: 'Styrene', sans-serif;
-            z-index: -1;
-            font-weight: 300;
-        }
-
-        .symbol:nth-child(1) { top: 15%; left: 5%; }
-        .symbol:nth-child(2) { top: 25%; right: 8%; }
-        .symbol:nth-child(3) { bottom: 35%; left: 3%; }
-        .symbol:nth-child(4) { bottom: 25%; right: 5%; }
-
-        @media (min-width: 1024px) {
-            .fullscreen-btn { display: none; }
-            .input-container { max-width: 800px; left: 50%; transform: translateX(-50%); }
-        }
-
-        @media (max-width: 480px) {
-            .input-wrapper { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
-            .input-box { min-height: 52px; padding: 4px 4px 4px 16px; }
-            .send-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
-            textarea { font-size: 16px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kurdistan - The Land of Mountains</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --primary:#0f5132;
+    --secondary:#198754;
+    --accent:#ffc107;
+    --light:#f8f9fa;
+    --dark:#212529;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body{
+    background:var(--light);
+    color:var(--dark);
+    scroll-behavior:smooth;
+}
+
+header{
+    background:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),
+    url('https://images.unsplash.com/photo-1602687093363-37cbe3a0a6a8?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    color:white;
+    padding:20px;
+}
+
+header h1{
+    font-size:2.2rem;
+    font-weight:700;
+}
+
+header p{
+    margin-top:15px;
+    font-size:1rem;
+    max-width:400px;
+}
+
+.btn{
+    margin-top:25px;
+    padding:12px 28px;
+    background:var(--accent);
+    border:none;
+    border-radius:30px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.btn:hover{
+    background:white;
+}
+
+section{
+    padding:60px 20px;
+    text-align:center;
+}
+
+section h2{
+    font-size:1.6rem;
+    margin-bottom:20px;
+    color:var(--primary);
+}
+
+.cards{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+    transition:.3s;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+}
+
+.card img{
+    width:100%;
+    border-radius:12px;
+    margin-bottom:15px;
+}
+
+footer{
+    background:var(--primary);
+    color:white;
+    text-align:center;
+    padding:25px 15px;
+    font-size:.9rem;
+}
+
+/* Desktop */
+@media(min-width:768px){
+    .cards{
+        flex-direction:row;
+        justify-content:center;
+    }
+    .card{
+        width:30%;
+    }
+}
+</style>
 </head>
+
 <body>
-    <div class="symbol">∑</div>
-    <div class="symbol">∫</div>
-    <div class="symbol">λ</div>
-    <div class="symbol">Ω</div>
 
-    <div class="app">
-        <header>
-            <div class="brand">
-                <div class="phi">φ</div>
-                <div class="title-group">
-                    <div class="title">orbit</div>
-                    <div class="subtitle">ai physicist</div>
-                </div>
-            </div>
-            <div class="header-actions">
-                <button class="icon-btn fullscreen-btn" onclick="toggleFullscreen()" title="fullscreen">
-                    ⛶
-                </button>
-                <button class="icon-btn" onclick="toggleTheme()" title="toggle theme">
-                    <span class="theme-icon">✹</span>
-                </button>
-                <button class="icon-btn" onclick="openModal()" title="about">
-                    <div class="dev-icon"></div>
-                </button>
-            </div>
-        </header>
+<header>
+    <h1>Welcome to Kurdistan</h1>
+    <p>The land of mountains, culture, history, and breathtaking landscapes.</p>
+    <button class="btn" onclick="document.getElementById('about').scrollIntoView()">Explore</button>
+</header>
 
-        <div class="chat-container" id="chat">
-            <div class="empty">
-                <div class="empty-icon">∫</div>
-                <p>start exploring physics</p>
-            </div>
+<section id="about">
+    <h2>About Kurdistan</h2>
+    <p>Kurdistan is a region known for its rich culture, stunning mountains, warm hospitality, and ancient history. It stretches across parts of Iraq, Turkey, Iran, and Syria.</p>
+</section>
+
+<section>
+    <h2>Top Destinations</h2>
+    <div class="cards">
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80">
+            <h3>Erbil</h3>
+            <p>The capital city, home to the ancient Erbil Citadel — one of the oldest continuously inhabited sites in the world.</p>
+        </div>
+
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1621799754526-a0d52c0c3f77?auto=format&fit=crop&w=800&q=80">
+            <h3>Duhok</h3>
+            <p>Famous for its beautiful mountains, lakes, and peaceful landscapes.</p>
+        </div>
+
+        <div class="card">
+            <img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=800&q=80">
+            <h3>Sulaymaniyah</h3>
+            <p>A cultural center known for art, education, and vibrant city life.</p>
         </div>
     </div>
+</section>
 
-    <div class="input-container" id="inputContainer">
-        <div class="input-wrapper">
-            <div class="input-box">
-                <textarea id="input" placeholder="Ask physics..." rows="1" inputmode="text" enterkeyhint="send" autocomplete="off" autocorrect="off" autocapitalize="sentences"></textarea>
-                <button class="send-btn" onclick="ask()" id="btn" aria-label="Send">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                </button>
-            </div>
+<section>
+    <h2>Culture & Heritage</h2>
+    <p>Kurdish culture is rich in music, dance, traditional clothing, and festivals such as Newroz. The region is also known for its delicious cuisine and strong community values.</p>
+</section>
 
-            <div class="input-header">
-                <button class="chips-toggle" onclick="toggleChips()" id="chipsToggle">
-                    1 çirké ▼
-                </button>
-            </div>
-            
-            <div class="chips-dropdown" id="chipsDropdown">
-                <button class="chip" onclick="quickAsk('spring motion')">spring</button>
-                <button class="chip" onclick="quickAsk('potential energy')">PE</button>
-                <button class="chip" onclick="quickAsk('kinetic energy')">KE</button>
-                <button class="chip" onclick="quickAsk('gsin theta')">incline</button>
-                <button class="chip" onclick="quickAsk('newton laws')">forces</button>
-                <button class="chip" onclick="quickAsk('who made you')">creator</button>
-            </div>
-        </div>
-    </div>
+<footer>
+    © 2026 Kurdistan Tourism | Designed for Mobile Experience
+</footer>
 
-    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
-        <div class="modal" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="closeModal()">×</button>
-            
-            <div class="modal-header">
-                <div class="modal-avatar"></div>
-                <div class="modal-title">zanin l sêr drostkêri</div>
-                <div class="modal-name">Aram Ahmed Bamarni</div>
-            </div>
-
-            <div class="lang-toggle">
-                <button class="lang-btn active" onclick="setLang('ku')" id="btn-ku">Kurdî</button>
-                <button class="lang-btn" onclick="setLang('en')" id="btn-en">English</button>
-            </div>
-
-            <div class="modal-content" id="content-ku">
-                <p>Qûtabyêkê Pola 12 ma | Başûrê Kurdistanê</p>
-                <p>Az xwendekarek îm ku b bawerî û dilsoziyeke mazin grêdayî Îslam û Kurdistanê me. Haz lî Jiyaneke sade dîkm û bala mîn li ser qadên Teknolojî, Perwerde û Felsefeyê ye.</p>
-                <p>Az hewl dîdm l ser kokên xwe bimînim û ber bi paşerojê pêngavan bihavêjim.</p>
-                <p style="font-size: 20px; color: var(--accent); margin-top: 16px;">2+2=1</p>
-            </div>
-
-            <div class="modal-content" id="content-en" style="display: none;">
-                <p>12th Grade Student | South Kurdistan</p>
-                <p>I am a student driven by faith (Islam) and patriotism (Kurdistan). I focus on living a life of simplicity while exploring the worlds of Technology, Education, and Philosophy.</p>
-                <p>I believe in the power of clear ideas and staying true to my roots while looking toward the future.</p>
-                <p style="font-size: 20px; color: var(--accent); margin-top: 16px;">2+2=1</p>
-            </div>
-
-            <div class="modal-footer">
-                <a href="https://instagram.com/reroomlaw" target="_blank" class="insta-link">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                    </svg>
-                    @reroomlaw
-                </a>
-                <div class="signature">Aram Ahmed Bamarni</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const chat = document.getElementById('chat');
-        const input = document.getElementById('input');
-        const btn = document.getElementById('btn');
-        const modal = document.getElementById('modal');
-        const inputContainer = document.getElementById('inputContainer');
-        const chipsDropdown = document.getElementById('chipsDropdown');
-        const chipsToggle = document.getElementById('chipsToggle');
-        
-        let currentLang = 'ku';
-        let isTyping = false;
-        let chipsOpen = false;
-        let keyboardOpen = false;
-
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-        }
-
-        function toggleTheme() {
-            const isDark = document.body.getAttribute('data-theme') === 'dark';
-            document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-            localStorage.setItem('theme', isDark ? 'light' : 'dark');
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {
-                    document.documentElement.webkitRequestFullscreen?.();
-                });
-            } else {
-                document.exitFullscreen?.() || document.webkitExitFullscreen?.();
-            }
-        }
-
-        function toggleChips() {
-            chipsOpen = !chipsOpen;
-            chipsDropdown.classList.toggle('show', chipsOpen);
-            chipsToggle.innerHTML = chipsOpen ? '1 çirké ▲' : '1 çirké ▼';
-            if (chipsOpen) {
-                setTimeout(() => {
-                    chipsDropdown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }, 100);
-            }
-        }
-
-        function openModal() {
-            modal.classList.add('show');
-        }
-
-        function closeModal(e) {
-            if (!e || e.target === modal) {
-                modal.classList.remove('show');
-            }
-        }
-
-        function setLang(lang) {
-            currentLang = lang;
-            document.getElementById('btn-ku').classList.toggle('active', lang === 'ku');
-            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-            document.getElementById('content-ku').style.display = lang === 'ku' ? 'block' : 'none';
-            document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
-        }
-
-        function handleViewportChange() {
-            if (!window.visualViewport) return;
-            
-            const vv = window.visualViewport;
-            const keyboardHeight = window.innerHeight - vv.height;
-            
-            if (keyboardHeight > 100) {
-                keyboardOpen = true;
-                const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-                inputContainer.style.transform = `translateY(-${offset}px)`;
-                
-                setTimeout(() => {
-                    const lastMsg = chat.lastElementChild;
-                    if (lastMsg?.classList.contains('message')) {
-                        lastMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                }, 100);
-            } else {
-                keyboardOpen = false;
-                inputContainer.style.transform = 'translateY(0)';
-            }
-        }
-
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', handleViewportChange);
-            window.visualViewport.addEventListener('scroll', handleViewportChange);
-        }
-
-        window.addEventListener('resize', () => {
-            if (!window.visualViewport) {
-                setTimeout(handleViewportChange, 100);
-            }
-        });
-
-        input.addEventListener('focus', () => {
-            input.style.fontSize = '16px';
-            setTimeout(() => {
-                handleViewportChange();
-                input.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 300);
-        });
-
-        input.addEventListener('blur', () => {
-            setTimeout(() => {
-                if (document.activeElement !== input) {
-                    inputContainer.style.transform = 'translateY(0)';
-                    if (chipsOpen) toggleChips();
-                }
-            }, 200);
-        });
-
-        input.addEventListener('input', function() {
-            this.style.height = 'auto';
-            const newHeight = Math.min(this.scrollHeight, 100);
-            this.style.height = newHeight + 'px';
-            
-            if (keyboardOpen) {
-                handleViewportChange();
-            }
-        });
-
-        function addMessage(role, text, isStreaming = false) {
-            if (chat.querySelector('.empty')) {
-                chat.innerHTML = '';
-            }
-
-            if (isStreaming && chat.lastElementChild?.classList.contains('ai')) {
-                chat.lastElementChild.innerHTML = cleanText(text) + '<span class="typing-cursor"></span>';
-                return chat.lastElementChild;
-            }
-
-            const div = document.createElement('div');
-            div.className = `message ${role}`;
-            
-            if (role === 'ai') {
-                div.innerHTML = cleanText(text) + (isStreaming ? '<span class="typing-cursor"></span>' : '');
-            } else {
-                div.textContent = text;
-            }
-            
-            chat.appendChild(div);
-            
-            setTimeout(() => {
-                div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 50);
-            
-            return div;
-        }
-
-        function addError(text, onRetry) {
-            if (chat.querySelector('.empty')) chat.innerHTML = '';
-
-            const div = document.createElement('div');
-            div.className = 'message error';
-            div.innerHTML = text + '<br>';
-            
-            const retryBtn = document.createElement('button');
-            retryBtn.className = 'retry-btn';
-            retryBtn.textContent = 'try again';
-            retryBtn.onclick = onRetry;
-            div.appendChild(retryBtn);
-            
-            chat.appendChild(div);
-            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        function cleanText(text) {
-            if (!text) return '';
-            
-            text = text.replace(/⚠️? IMPORTANT NOTICE ⚠️?[\s\S]*?continuing to work normally\./gi, '');
-            text = text.replace(/The Pollinations legacy[\s\S]*?latest models\./gi, '');
-            text = text.replace(/Please migrate to[\s\S]*?models\./gi, '');
-            
-            text = text.replace(/[#*_~`]/g, '');
-            text = text.replace(/\*\*/g, '');
-            
-            const symbols = {
-                'theta': 'θ', 'omega': 'ω', 'lambda': 'λ', 'delta': 'Δ',
-                'sigma': 'Σ', 'pi': 'π', 'sqrt': '√', 'infinity': '∞', 'degrees?': '°'
-            };
-            
-            Object.entries(symbols).forEach(([key, val]) => {
-                text = text.replace(new RegExp(key, 'gi'), val);
-            });
-            
-            text = text.replace(/([A-Z]{1,2})\s*=\s*([^,\n]+)/g, '<div class="formula"><span class="variable">$1</span> = $2</div>');
-            text = text.replace(/\b([a-zA-Z])\s*=\s*/g, '<span class="variable">$1</span> = ');
-            text = text.replace(/\n\s*\n/g, '\n').trim();
-            
-            return text;
-        }
-
-        async function streamText(text, messageDiv) {
-            const words = text.split(' ');
-            let currentText = '';
-            
-            for (let i = 0; i < words.length; i++) {
-                currentText += words[i] + ' ';
-                messageDiv.innerHTML = cleanText(currentText) + '<span class="typing-cursor"></span>';
-                
-                const delay = Math.random() * 50 + 30;
-                await new Promise(r => setTimeout(r, delay));
-            }
-            
-            messageDiv.innerHTML = cleanText(currentText);
-            isTyping = false;
-        }
-
-        async function ask() {
-            const text = input.value.trim();
-            if (!text || isTyping) return;
-
-            btn.disabled = true;
-            addMessage('user', text);
-            input.value = '';
-            input.style.height = 'auto';
-            isTyping = true;
-
-            const thinking = document.createElement('div');
-            thinking.className = 'message ai thinking';
-            thinking.innerHTML = '<span></span><span></span><span></span>';
-            chat.appendChild(thinking);
-            thinking.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-            const lower = text.toLowerCase();
-            if (['who made you', 'who created you', 'who built you', 'your creator', 'who is your developer'].some(q => lower.includes(q))) {
-                thinking.remove();
-                const msgDiv = addMessage('ai', '', true);
-                await streamText('I was created by Aram Ahmed Bamarni — a visionary 12th grade student from South Kurdistan who masterfully blends faith, patriotism, and technology. His code runs through my circuits. 2+2=1 🌟', msgDiv);
-                btn.disabled = false;
-                return;
-            }
-
-            try {
-                const prompt = `You are a physics professor. Answer very concisely (2-3 sentences). Use simple analogies. No markdown. Plain text only. Question: ${text}`;
-                const apiUrl = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
-                
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 15000);
-                
-                const res = await fetch(apiUrl, { 
-                    signal: controller.signal,
-                    headers: { 'Accept': 'text/plain' }
-                });
-                clearTimeout(timeout);
-                
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                
-                let result = await res.text();
-                
-                if (result.includes('<!DOCTYPE') || result.includes('<html') || result.length < 3) {
-                    throw new Error('Invalid response');
-                }
-                
-                result = result.replace(/["']/g, '').trim();
-                if (result.length > 800) result = result.substring(0, 800) + '...';
-                
-                thinking.remove();
-                
-                const msgDiv = addMessage('ai', '', true);
-                await streamText(result, msgDiv);
-                
-            } catch (e) {
-                thinking.remove();
-                addError('Connection failed. The AI service might be busy.', () => {
-                    input.value = text;
-                    ask();
-                });
-                isTyping = false;
-            }
-            
-            btn.disabled = false;
-        }
-
-        function quickAsk(q) {
-            input.value = q;
-            input.focus();
-            setTimeout(handleViewportChange, 300);
-            if (chipsOpen) toggleChips();
-        }
-
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                ask();
-            }
-        });
-
-        handleViewportChange();
-    </script>
 </body>
 </html>
-
